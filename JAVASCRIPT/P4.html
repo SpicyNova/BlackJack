@@ -1,0 +1,303 @@
+<html>
+    <script language = "javascript">  
+        //dealer's hand = array of cards
+        var dealerHand = [];
+        //dealer's score = actual score
+        var dealerScore = 0;
+        //dealer's total = displayed total
+        var dealerTotal = 0;
+
+        //player's hand = array of cards
+        var playerHand = [];
+        //player's score = displayed total
+        var playerScore = 0;
+
+        //generate random card from 'deck'
+        function rand_card() {
+            var nums = ['a','2','3','4','5','6','7','8','9','10','j','q','k'];
+            var num = nums[Math.floor(Math.random() * nums.length)];
+            var suits = ['h','c','s','d'];
+            var suit = suits[Math.floor(Math.random() * suits.length)];
+            return num+suit;
+        }
+
+        //get card value
+        function get_cardValue(card) {
+            if (!(isNaN(card.charAt(0)) && isNaN(card.charAt(1)))) {
+                value = card.charAt(0).concat(card.charAt(1)); 
+            }
+            else if(isNaN(card.charAt(0))) {
+                if(card.charAt(0) === 'a') {
+                    value = 1;
+                }
+                else{
+                    value = 10; 
+                }
+            }
+            else {
+                value = card.charAt(0);
+            }
+            return parseInt(value);
+        }
+
+        //card image
+        var cardImg = function(card, targetId) {
+            var img = document.createElement('img');
+            img.src = 'cards/' + card + '.png';
+            document.getElementById(targetId).appendChild(img);
+        }
+        
+        function total(hand){
+            var count = hand.length;
+            var score = 0;
+            var aces = 0;
+            for(var i = 0; i < count; i++){
+                card = hand[i];
+                value = card.charAt(0);
+                if(isNaN(value)){
+                    if(value == 'a'){
+                        value = 11;
+                        aces++;
+                    }
+                    else{
+                        value = 10; 
+                    }
+                }
+                else if(!isNaN(card.charAt(1))){
+                    value = 10;
+                }
+                else{
+                    value = parseInt(value);
+                }
+                score = score + value;
+            }
+            if(score > 21 && aces > 0 ){
+                for(var i = 0; i<aces && score > 21; i++){
+                    score = score-10;
+                }
+            }
+            return score;
+        }
+
+        //update total
+        function updateTotal(hand) {
+            return total(hand);
+        }
+
+        
+        //function who_wins
+        /*
+            decide who wins:
+                if dealerScore > 21: player wins -> show dealer's hand, update dealer total, 'you win' STOP
+                else if dealerScore > playerScore: player lose -> show dealer's hand, update dealer total, 'you lose' STOP
+                else if dealerScore < playerScore: player wins -> show dealer's hand, update dealer total, 'you win' STOP
+                else dealerScore == playerScore: tie -> show dealer's hand, update dealer total, 'tie' STOP
+        */
+        function who_wins() {
+            var results = '';
+            if (dealerScore > 21) {
+                dealerTotal = dealerScore;
+                results = 'You win! :)';
+            }
+            else if(dealerScore > playerScore) {
+                dealerTotal = dealerScore;
+                results = 'You lose! :P';
+            }
+            else if (dealerScore < playerScore) {
+                dealerTotal = dealerScore;
+                results = 'You win! :)';
+            }
+            else if (dealerScore === playerScore) {
+                dealerTotal = dealerScore;
+                results = 'A tie! :O'
+            }
+            else if (dealerScore === 21) {
+                dealerTotal = dealerScore;
+                results = 'You lose! :P';
+            }
+            else if (playerScore === 21) {
+                dealerTotal = dealerScore;
+                results = 'You win! :)'
+            }
+
+            return results;
+        }
+
+        //function hit
+        /*
+            generates random card
+            adds card to player's hand
+                display cards
+            adds value to player's score
+                if cardValue == 1
+                    if playerScore > 10
+                        playerScore + 1
+                    else 
+                        playerScore + 11
+                if playerScore > 21: player loses -> 'you lose' STOP
+        */
+        function hit() {
+            card = rand_card();
+            playerHand.push(card);
+            playerScore = updateTotal(playerHand);
+
+            document.getElementById("playerScore").innerHTML = playerScore;
+            
+            if (playerScore > 21) {
+                document.getElementById("weiner").innerHTML = 'You lose! :P';
+
+                //disable hit and stand
+                document.getElementById("hit_button").disabled = true;
+                document.getElementById("stand_button").disabled = true;
+            }
+
+            document.getElementById("playerCards").appendChild(cardImg(card,"playerCards"));
+        }
+
+        //function stand
+        /*
+            while dealerScore < 17:
+                generate random card
+                add card to dealer's hand
+                add value to dealer's score
+                    if cardValue == 1
+                        if playerScore > 10
+                            playerScore + 1
+                        else 
+                            playerScore + 11
+            who wins?
+        */
+        function stand() {
+            while (dealerScore < 17) {
+                card = rand_card();
+                dealerHand.push(card);
+                dealerScore = updateTotal(dealerHand);
+            }
+
+            document.getElementById("dealerTotal").innerHTML = dealerScore;
+            document.getElementById("weiner").innerHTML = who_wins();
+
+            //disable stand and hit
+            document.getElementById("stand_button").disabled = true;
+            document.getElementById("hit_button").disabled = true;
+
+            document.getElementById("dealerCards").innerHTML = ' ';
+            for(var i = 0; i < dealerHand.length; i ++) {
+                cardImg(dealerHand[i], "dealerCards");
+            }
+        }
+
+        //deal
+        //function deal_dealer
+        /*
+            DO TWICE -> while i < 2
+            rand_card -> index = rand_card
+            add card to dealer's hand array -> dealerHand.append(cardDeck[index].img)
+                only display the first card in array -> show dealerHand[0]
+            add value to dealer's score 
+                -> if cardDeck[index].value == 1
+                        if dealerScore > 10
+                            dealerScore + 1
+                        else 
+                            dealerScore + 11
+            display first value as total -> if i = 0: dealerTotal = cardDeck[index].value
+        */
+        function deal_dealer() {
+            //reset all vars
+            document.getElementById("dealerCards").innerHTML = ' ';
+            document.getElementById("hit_button").disabled = false;
+            document.getElementById("stand_button").disabled = false;
+            document.getElementById("weiner").innerHTML = ' ';
+            dealerHand = [];
+            dealerScore = 0;
+            dealerTotal = 0;
+
+            while (dealerHand.length < 2) {
+                var card = rand_card();
+                dealerHand.push(card);
+                dealerScore = updateTotal(dealerHand);
+                if (dealerHand.length === 1){
+                    dealerTotal = dealerScore;
+                }
+            }
+
+            for(var i = 0; i < dealerHand.length; i ++) {
+                if (i === dealerHand.length - 1){
+                    cardImg("back", "dealerCards");
+                }
+                else {
+                    cardImg(dealerHand[i], "dealerCards");
+                }
+            }
+
+            document.getElementById("dealerTotal").innerHTML = dealerTotal;
+
+        }
+
+        //function deal_player
+        /*
+            DO TWICE -> while i < 2
+            rand_card -> index = rand_card
+            add card to player's hand array -> playerHand.append(cardDeck[index].img)
+                display entire hand array -> show playerHand via loop?
+            add value to player's score 
+                -> if cardDeck[index].value == 1
+                        if playerScore > 10
+                            playerScore + 1
+                        else 
+                            playerScore + 11
+                display as total
+        */
+        function deal_player() {
+            //reset all vars
+            document.getElementById("playerCards").innerHTML = ' ';
+            document.getElementById("hit_button").disabled = false;
+            document.getElementById("stand_button").disabled = false;
+            playerHand = [];
+            playerScore = 0;
+
+            while (playerHand.length < 2) {
+                var card = rand_card();
+                playerHand.push(card);
+                var cardValue = get_cardValue(card);
+                playerScore = updateTotal(playerHand);
+            }
+
+            for(var i = 0; i < playerHand.length; i ++) {
+                cardImg(playerHand[i], "playerCards");
+            }
+            document.getElementById("playerScore").innerHTML = playerScore;
+        }
+    </script>
+
+    <body onload = "deal_dealer(), deal_player()">
+        <div>
+
+            <h3> Dealer's Card(s) </h3>
+            <h3 id = "dealerCards"></h3>
+            <h3>Total:</h3> 
+            <p id="dealerTotal">
+                <script language = "javascript">
+                    document.write(dealerTotal);
+                </script>
+            </p>
+
+            <h3> Player's Card(s) </h3>
+            <h3 id = "playerCards"></h3>
+            <h3>Total:</h3> 
+            <p id="playerScore">
+                <script language = "javascript">
+                    document.write(playerScore);
+                </script>
+            </p>
+
+            <h3 id = "weiner"></h3>
+
+            <button id = "hit_button" onclick = "hit()"> Hit </button>
+            <button id = "stand_button" onclick = "stand()"> Stand </button>
+            <button id = "deal_button" onclick = "deal_dealer(), deal_player()"> Deal </button>
+
+        </div>
+    </body>
+    
+</html>
